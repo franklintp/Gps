@@ -1,0 +1,2902 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Bastón Inteligente - Rastreo GPS</title>
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+
+<style>
+
+/* =========================================================
+   GENERAL
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #0f172a;
+
+    color: #e2e8f0;
+
+    height: 100vh;
+
+    overflow: hidden;
+}
+
+
+.app {
+
+    height: 100vh;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+header {
+
+    height: 70px;
+
+    background: #111827;
+
+    border-bottom: 1px solid #334155;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 20px;
+
+    z-index: 1000;
+}
+
+
+.header-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+.logo {
+
+    width: 45px;
+
+    height: 45px;
+
+    background: #1e293b;
+
+    border-radius: 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 26px;
+}
+
+
+.title {
+
+    font-size: 19px;
+
+    font-weight: bold;
+}
+
+
+.subtitle {
+
+    font-size: 12px;
+
+    color: #94a3b8;
+
+    margin-top: 3px;
+}
+
+
+/* =========================================================
+   ESTADO
+========================================================= */
+
+.connection {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    background: #1e293b;
+
+    border: 1px solid #334155;
+
+    padding: 8px 14px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+}
+
+
+.connection-dot {
+
+    width: 10px;
+
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: #ef4444;
+}
+
+
+.connection-dot.online {
+
+    background: #22c55e;
+
+    box-shadow:
+        0 0 8px #22c55e;
+}
+
+
+/* =========================================================
+   CONTENIDO
+========================================================= */
+
+.main {
+
+    flex: 1;
+
+    display: flex;
+
+    min-height: 0;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+
+    width: 350px;
+
+    background: #111827;
+
+    border-right: 1px solid #334155;
+
+    padding: 16px;
+
+    overflow-y: auto;
+}
+
+
+.section {
+
+    margin-bottom: 18px;
+}
+
+
+.section-title {
+
+    font-size: 11px;
+
+    color: #64748b;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+    margin-bottom: 10px;
+}
+
+
+/* =========================================================
+   DATOS
+========================================================= */
+
+.data-grid {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 8px;
+}
+
+
+.data-card {
+
+    background: #1e293b;
+
+    border: 1px solid #334155;
+
+    border-radius: 10px;
+
+    padding: 12px;
+}
+
+
+.data-icon {
+
+    font-size: 19px;
+
+    margin-bottom: 5px;
+}
+
+
+.data-label {
+
+    color: #94a3b8;
+
+    font-size: 11px;
+}
+
+
+.data-value {
+
+    font-size: 17px;
+
+    font-weight: bold;
+
+    margin-top: 4px;
+}
+
+
+/* =========================================================
+   DISTANCIA
+========================================================= */
+
+.distance-card {
+
+    background: #1e293b;
+
+    border: 1px solid #334155;
+
+    border-radius: 12px;
+
+    padding: 15px;
+}
+
+
+.distance-title {
+
+    color: #94a3b8;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+
+.distance-value {
+
+    font-size: 32px;
+
+    font-weight: bold;
+
+    transition: color .3s;
+}
+
+
+.distance-status {
+
+    margin-top: 8px;
+
+    font-size: 13px;
+
+    font-weight: bold;
+}
+
+
+.distance-safe {
+
+    color: #22c55e;
+}
+
+
+.distance-warning {
+
+    color: #eab308;
+}
+
+
+.distance-danger {
+
+    color: #f97316;
+}
+
+
+.distance-critical {
+
+    color: #ef4444;
+}
+
+
+/* =========================================================
+   UBICACIÓN
+========================================================= */
+
+.location-box {
+
+    background: #1e293b;
+
+    border: 1px solid #334155;
+
+    border-radius: 10px;
+
+    padding: 12px;
+
+    font-family: monospace;
+
+    font-size: 12px;
+
+    line-height: 1.9;
+}
+
+
+.location-label {
+
+    color: #64748b;
+}
+
+
+.location-value {
+
+    color: #cbd5e1;
+}
+
+
+/* =========================================================
+   BOTONES
+========================================================= */
+
+.buttons {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+button {
+
+    width: 100%;
+
+    padding: 11px;
+
+    border-radius: 9px;
+
+    border: 1px solid #334155;
+
+    background: #1e293b;
+
+    color: #e2e8f0;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    font-size: 13px;
+}
+
+
+button:hover {
+
+    background: #273449;
+}
+
+
+button.primary {
+
+    background: #2563eb;
+
+    border-color: #2563eb;
+
+    color: white;
+}
+
+
+button.active {
+
+    background: #166534;
+
+    border-color: #22c55e;
+}
+
+
+button:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   UBICACIONES GUARDADAS
+========================================================= */
+
+.saved-item {
+
+    background: #1e293b;
+
+    border: 1px solid #334155;
+
+    border-radius: 9px;
+
+    padding: 10px;
+
+    margin-bottom: 7px;
+}
+
+
+.saved-name {
+
+    font-size: 13px;
+
+    font-weight: bold;
+}
+
+
+.saved-info {
+
+    color: #94a3b8;
+
+    font-size: 11px;
+
+    margin-top: 4px;
+}
+
+
+.saved-buttons {
+
+    display: flex;
+
+    gap: 5px;
+
+    margin-top: 8px;
+}
+
+
+.saved-buttons button {
+
+    padding: 6px;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   MAPA
+========================================================= */
+
+.map-container {
+
+    flex: 1;
+
+    position: relative;
+
+    min-width: 0;
+}
+
+
+#map {
+
+    width: 100%;
+
+    height: 100%;
+}
+
+
+/* =========================================================
+   CONTROLES MAPA
+========================================================= */
+
+.map-controls {
+
+    position: absolute;
+
+    top: 15px;
+
+    right: 15px;
+
+    z-index: 800;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+
+.map-button {
+
+    width: auto;
+
+    background: white;
+
+    color: #111827;
+
+    border: none;
+
+    padding: 10px 13px;
+
+    border-radius: 8px;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+
+    font-size: 13px;
+}
+
+
+.map-button:hover {
+
+    background: #f1f5f9;
+}
+
+
+/* =========================================================
+   MARCADOR NORMAL DE UBICACIÓN
+========================================================= */
+
+.baston-marker {
+
+    width: 34px;
+
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: #2563eb;
+
+    border: 4px solid white;
+
+    box-shadow:
+        0 2px 10px rgba(0,0,0,.45);
+
+    position: relative;
+}
+
+
+.baston-marker::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 10px;
+
+    height: 10px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform:
+        translate(-50%, -50%);
+}
+
+
+.baston-marker.offline {
+
+    background: #64748b;
+
+    opacity: .65;
+}
+
+
+/* =========================================================
+   MARCADOR DEL USUARIO
+========================================================= */
+
+.user-marker {
+
+    width: 18px;
+
+    height: 18px;
+
+    border-radius: 50%;
+
+    background: #2563eb;
+
+    border: 3px solid white;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.4);
+}
+
+
+/* =========================================================
+   POPUP
+========================================================= */
+
+.popup-title {
+
+    font-weight: bold;
+
+    font-size: 15px;
+
+    margin-bottom: 5px;
+}
+
+
+.popup-line {
+
+    font-size: 12px;
+
+    margin-top: 3px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width: 800px) {
+
+    .main {
+
+        position: relative;
+    }
+
+
+    .sidebar {
+
+        position: absolute;
+
+        left: 0;
+
+        bottom: 0;
+
+        width: 100%;
+
+        max-height: 45%;
+
+        z-index: 900;
+
+        border-right: none;
+
+        border-top: 1px solid #334155;
+    }
+
+
+    .map-container {
+
+        width: 100%;
+
+        height: 100%;
+    }
+
+
+    .subtitle {
+
+        display: none;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header>
+
+    <div class="header-left">
+
+        <div class="logo">
+            🦯
+        </div>
+
+        <div>
+
+            <div class="title">
+                Bastón Inteligente
+            </div>
+
+            <div class="subtitle">
+                Sistema de rastreo GPS
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="connection">
+
+        <span
+            id="connectionDot"
+            class="connection-dot">
+        </span>
+
+        <span id="connectionText">
+            Desconectado
+        </span>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<div class="main">
+
+
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
+
+<aside class="sidebar">
+
+
+<!-- DATOS GPS -->
+
+<section class="section">
+
+    <div class="section-title">
+        Datos GPS
+    </div>
+
+
+    <div class="data-grid">
+
+
+        <div class="data-card">
+
+            <div class="data-icon">
+                🛰️
+            </div>
+
+            <div class="data-label">
+                Satélites
+            </div>
+
+            <div
+                class="data-value"
+                id="satellites">
+
+                --
+
+            </div>
+
+        </div>
+
+
+        <div class="data-card">
+
+            <div class="data-icon">
+                🚶
+            </div>
+
+            <div class="data-label">
+                Velocidad
+            </div>
+
+            <div
+                class="data-value"
+                id="speed">
+
+                --
+
+            </div>
+
+        </div>
+
+
+        <div class="data-card">
+
+            <div class="data-icon">
+                📏
+            </div>
+
+            <div class="data-label">
+                Altitud
+            </div>
+
+            <div
+                class="data-value"
+                id="altitude">
+
+                --
+
+            </div>
+
+        </div>
+
+
+        <div class="data-card">
+
+            <div class="data-icon">
+                🔋
+            </div>
+
+            <div class="data-label">
+                Batería
+            </div>
+
+            <div
+                class="data-value"
+                id="battery">
+
+                No disponible
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     ULTRASONIDO
+===================================================== -->
+
+<section class="section">
+
+    <div class="section-title">
+        Sensor ultrasónico
+    </div>
+
+
+    <div class="distance-card">
+
+
+        <div class="distance-title">
+
+            Distancia al obstáculo
+
+        </div>
+
+
+        <div
+            id="distanceValue"
+            class="distance-value">
+
+            --
+
+        </div>
+
+
+        <div
+            id="distanceStatus"
+            class="distance-status">
+
+            Esperando datos...
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     UBICACIÓN
+===================================================== -->
+
+<section class="section">
+
+    <div class="section-title">
+        Ubicación actual
+    </div>
+
+
+    <div class="location-box">
+
+
+        <div>
+
+            <span class="location-label">
+                Latitud:
+            </span>
+
+            <span
+                id="latitude"
+                class="location-value">
+
+                --
+
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <span class="location-label">
+                Longitud:
+            </span>
+
+            <span
+                id="longitude"
+                class="location-value">
+
+                --
+
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <span class="location-label">
+                Actualización:
+            </span>
+
+            <span
+                id="updateTime"
+                class="location-value">
+
+                --
+
+            </span>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     ACCIONES
+===================================================== -->
+
+<section class="section">
+
+    <div class="section-title">
+        Acciones
+    </div>
+
+
+    <div class="buttons">
+
+
+        <button
+            class="primary"
+            id="goBaston">
+
+            📍 Ver ubicación del bastón
+
+        </button>
+
+
+        <button
+            id="myLocation">
+
+            📍 Ver mi ubicación
+
+        </button>
+
+
+        <button
+            id="routeButton">
+
+            🧭 Cómo llegar al bastón
+
+        </button>
+
+
+        <button
+            id="followButton">
+
+            🎯 Seguir bastón
+
+        </button>
+
+
+        <button
+            id="saveButton">
+
+            💾 Guardar ubicación actual
+
+        </button>
+
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     UBICACIONES GUARDADAS
+===================================================== -->
+
+<section class="section">
+
+    <div class="section-title">
+        Ubicaciones guardadas
+    </div>
+
+
+    <div id="savedLocations">
+
+        <div style="
+            color:#64748b;
+            font-size:12px;
+        ">
+
+            No hay ubicaciones guardadas.
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</aside>
+
+
+<!-- =====================================================
+     MAPA
+===================================================== -->
+
+<div class="map-container">
+
+
+    <div id="map"></div>
+
+
+    <div class="map-controls">
+
+
+        <button
+            class="map-button"
+            id="mapBaston">
+
+            📍 Bastón
+
+        </button>
+
+
+        <button
+            class="map-button"
+            id="mapUser">
+
+            📍 Mi ubicación
+
+        </button>
+
+
+    </div>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+<!-- =====================================================
+     LIBRERÍAS
+===================================================== -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+
+<script>
+
+/* =========================================================
+   FIREBASE
+========================================================= */
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyDfd15MoE3SdQFZz_1xiFhdVurlnv2i4Jc",
+
+    authDomain:
+        "baston-b8d48.firebaseapp.com",
+
+    databaseURL:
+        "https://baston-b8d48-default-rtdb.firebaseio.com",
+
+    projectId:
+        "baston-b8d48",
+
+    storageBucket:
+        "baston-b8d48.firebasestorage.app",
+
+    messagingSenderId:
+        "465511504883",
+
+    appId:
+        "1:465511504883:web:1981f340ffedb3b1711086"
+
+};
+
+
+const RUTA =
+    "baston/ubicacion";
+
+
+/* =========================================================
+   CONFIGURACIÓN
+========================================================= */
+
+const TIEMPO_DESCONEXION = 30000;
+
+
+/* =========================================================
+   MAPA ESRI
+========================================================= */
+
+const map = L.map("map").setView(
+    [-16.409, -71.537],
+    15
+);
+
+
+/*
+   IMPORTANTE:
+
+   Se utiliza Esri en lugar de:
+
+   https://{s}.tile.openstreetmap.org/...
+
+   para evitar el error 403 que estabas recibiendo.
+*/
+
+L.tileLayer(
+
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+
+    {
+
+        maxZoom: 19,
+
+        attribution:
+            "Tiles &copy; Esri"
+
+    }
+
+).addTo(map);
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+let baston = null;
+
+let bastonMarker = null;
+
+let userMarker = null;
+
+let accuracyCircle = null;
+
+let userPosition = null;
+
+let followBaston = false;
+
+let lastDataTime = null;
+
+let routeLine = null;
+
+let historial = [];
+
+const MAX_HISTORIAL = 100;
+
+
+/* =========================================================
+   ICONO BASTÓN
+========================================================= */
+
+function iconoBaston(online) {
+
+    return L.divIcon({
+
+        className: "",
+
+        html: `
+
+            <div class="
+                baston-marker
+                ${online ? "" : "offline"}
+            "></div>
+
+        `,
+
+        iconSize: [34, 34],
+
+        iconAnchor: [17, 17]
+
+    });
+
+}
+
+
+/* =========================================================
+   ICONO USUARIO
+========================================================= */
+
+function iconoUsuario() {
+
+    return L.divIcon({
+
+        className: "",
+
+        html: `
+
+            <div class="user-marker"></div>
+
+        `,
+
+        iconSize: [18, 18],
+
+        iconAnchor: [9, 9]
+
+    });
+
+}
+
+
+/* =========================================================
+   ACTUALIZAR MARCADOR
+========================================================= */
+
+function actualizarMarcador(online) {
+
+    if (!baston) {
+
+        return;
+
+    }
+
+
+    const posicion = [
+
+        baston.lat,
+
+        baston.lng
+
+    ];
+
+
+    if (!bastonMarker) {
+
+        bastonMarker = L.marker(
+
+            posicion,
+
+            {
+
+                icon:
+                    iconoBaston(online),
+
+                zIndexOffset:
+                    1000
+
+            }
+
+        ).addTo(map);
+
+
+        bastonMarker.bindPopup(
+
+            crearPopup(online)
+
+        );
+
+    }
+
+    else {
+
+        bastonMarker.setLatLng(
+            posicion
+        );
+
+
+        bastonMarker.setIcon(
+            iconoBaston(online)
+        );
+
+
+        bastonMarker.setPopupContent(
+
+            crearPopup(online)
+
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   POPUP
+========================================================= */
+
+function crearPopup(online) {
+
+    return `
+
+        <div class="popup-title">
+            📍 Bastón inteligente
+        </div>
+
+        <div class="popup-line">
+
+            Estado:
+            ${online
+                ? "🟢 Conectado"
+                : "🔴 Desconectado"}
+
+        </div>
+
+        <div class="popup-line">
+
+            Latitud:
+            ${baston.lat.toFixed(6)}
+
+        </div>
+
+        <div class="popup-line">
+
+            Longitud:
+            ${baston.lng.toFixed(6)}
+
+        </div>
+
+        <div class="popup-line">
+
+            Distancia:
+            ${
+                baston.distancia !== null
+                ? baston.distancia.toFixed(1) + " cm"
+                : "--"
+            }
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   RECIBIR FIREBASE
+========================================================= */
+
+function actualizarDatos(data) {
+
+    const lat =
+        Number(data.latitud);
+
+    const lng =
+        Number(data.longitud);
+
+
+    if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng)
+    ) {
+
+        console.error(
+            "GPS inválido:",
+            data
+        );
+
+        return;
+
+    }
+
+
+    /* =========================================
+       GUARDAR POSICIÓN
+    ========================================= */
+
+    baston = {
+
+        lat: lat,
+
+        lng: lng,
+
+        distancia:
+            data.distancia !== null &&
+            data.distancia !== undefined
+                ? Number(data.distancia)
+                : null
+
+    };
+
+
+    /*
+       IMPORTANTE:
+
+       Si el ESP32 posteriormente envía
+       un timestamp, lo utilizamos.
+
+       Mientras no lo envíe, usamos la hora
+       de recepción del navegador.
+    */
+
+    if (
+        data.timestamp !== undefined &&
+        Number.isFinite(
+            Number(data.timestamp)
+        )
+    ) {
+
+        let timestamp =
+            Number(data.timestamp);
+
+        /*
+           Si viene en segundos Unix,
+           convertir a milisegundos.
+        */
+
+        if (timestamp < 100000000000) {
+
+            timestamp =
+                timestamp * 1000;
+
+        }
+
+        lastDataTime =
+            timestamp;
+
+    }
+
+    else {
+
+        lastDataTime =
+            Date.now();
+
+    }
+
+
+    /* =========================================
+       LATITUD
+    ========================================= */
+
+    document.getElementById(
+        "latitude"
+    ).textContent =
+        lat.toFixed(6);
+
+
+    /* =========================================
+       LONGITUD
+    ========================================= */
+
+    document.getElementById(
+        "longitude"
+    ).textContent =
+        lng.toFixed(6);
+
+
+    /* =========================================
+       SATÉLITES
+    ========================================= */
+
+    document.getElementById(
+        "satellites"
+    ).textContent =
+
+        data.satelites !== undefined
+            ? data.satelites
+            : "--";
+
+
+    /* =========================================
+       VELOCIDAD
+    ========================================= */
+
+    document.getElementById(
+        "speed"
+    ).textContent =
+
+        data.velocidad !== undefined
+
+            ? Number(
+                data.velocidad
+              ).toFixed(2) + " km/h"
+
+            : "--";
+
+
+    /* =========================================
+       ALTITUD
+    ========================================= */
+
+    document.getElementById(
+        "altitude"
+    ).textContent =
+
+        data.altitud !== undefined
+
+            ? Number(
+                data.altitud
+              ).toFixed(1) + " m"
+
+            : "--";
+
+
+    /* =========================================
+       BATERÍA
+    ========================================= */
+
+    const batteryElement =
+        document.getElementById(
+            "battery"
+        );
+
+
+    if (
+        data.bateria !== undefined &&
+        Number.isFinite(
+            Number(data.bateria)
+        )
+    ) {
+
+        batteryElement.textContent =
+            Number(data.bateria) + "%";
+
+    }
+
+    else {
+
+        batteryElement.textContent =
+            "No disponible";
+
+    }
+
+
+    /* =========================================
+       ULTRASONIDO
+    ========================================= */
+
+    actualizarDistancia(
+        baston.distancia
+    );
+
+
+    /* =========================================
+       HORA
+    ========================================= */
+
+    document.getElementById(
+        "updateTime"
+    ).textContent =
+
+        new Date(
+            lastDataTime
+        ).toLocaleTimeString();
+
+
+    /* =========================================
+       ESTADO
+    ========================================= */
+
+    actualizarEstado(true);
+
+
+    /* =========================================
+       MARCADOR
+    ========================================= */
+
+    actualizarMarcador(true);
+
+
+    /* =========================================
+       HISTORIAL
+    ========================================= */
+
+    historial.push([
+
+        lat,
+
+        lng
+
+    ]);
+
+
+    if (
+        historial.length >
+        MAX_HISTORIAL
+    ) {
+
+        historial.shift();
+
+    }
+
+
+    if (
+        followBaston
+    ) {
+
+        map.panTo(
+
+            [
+
+                lat,
+
+                lng
+
+            ],
+
+            {
+
+                animate: true
+
+            }
+
+        );
+
+    }
+
+
+    /*
+       Solo centramos automáticamente
+       la primera vez que recibimos GPS.
+    */
+
+    if (
+        historial.length === 1
+    ) {
+
+        map.setView(
+
+            [
+
+                lat,
+
+                lng
+
+            ],
+
+            17
+
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DISTANCIA
+========================================================= */
+
+function actualizarDistancia(
+    distancia
+) {
+
+    const value =
+        document.getElementById(
+            "distanceValue"
+        );
+
+
+    const status =
+        document.getElementById(
+            "distanceStatus"
+        );
+
+
+    value.className =
+        "distance-value";
+
+
+    if (
+        distancia === null ||
+        !Number.isFinite(
+            distancia
+        )
+    ) {
+
+        value.textContent =
+            "--";
+
+
+        status.textContent =
+            "Sin lectura del sensor";
+
+
+        status.className =
+            "distance-status";
+
+
+        return;
+
+    }
+
+
+    value.textContent =
+        distancia.toFixed(1)
+        + " cm";
+
+
+    if (
+        distancia > 100
+    ) {
+
+        status.textContent =
+            "🟢 Camino libre";
+
+
+        status.className =
+            "distance-status distance-safe";
+
+    }
+
+
+    else if (
+        distancia > 60
+    ) {
+
+        status.textContent =
+            "🟡 Precaución";
+
+
+        status.className =
+            "distance-status distance-warning";
+
+    }
+
+
+    else if (
+        distancia > 20
+    ) {
+
+        status.textContent =
+            "🟠 Obstáculo cercano";
+
+
+        status.className =
+            "distance-status distance-danger";
+
+    }
+
+
+    else {
+
+        status.textContent =
+            "🔴 PELIGRO - Obstáculo muy cerca";
+
+
+        status.className =
+            "distance-status distance-critical";
+
+    }
+
+}
+
+
+/* =========================================================
+   ESTADO CONEXIÓN
+========================================================= */
+
+function actualizarEstado(
+    conectado
+) {
+
+    const dot =
+        document.getElementById(
+            "connectionDot"
+        );
+
+
+    const text =
+        document.getElementById(
+            "connectionText"
+        );
+
+
+    if (conectado) {
+
+        dot.classList.add(
+            "online"
+        );
+
+
+        text.textContent =
+            "Bastón conectado";
+
+    }
+
+    else {
+
+        dot.classList.remove(
+            "online"
+        );
+
+
+        text.textContent =
+            "Bastón desconectado";
+
+    }
+
+
+    if (bastonMarker) {
+
+        bastonMarker.setIcon(
+
+            iconoBaston(
+                conectado
+            )
+
+        );
+
+        bastonMarker.setPopupContent(
+
+            crearPopup(
+                conectado
+            )
+
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   VIGILAR CONEXIÓN
+========================================================= */
+
+setInterval(
+
+    function() {
+
+        if (
+            lastDataTime === null
+        ) {
+
+            actualizarEstado(
+                false
+            );
+
+            return;
+
+        }
+
+
+        const diferencia =
+            Date.now() -
+            lastDataTime;
+
+
+        if (
+            diferencia >
+            TIEMPO_DESCONEXION
+        ) {
+
+            actualizarEstado(
+                false
+            );
+
+        }
+
+        else {
+
+            actualizarEstado(
+                true
+            );
+
+        }
+
+    },
+
+    1000
+
+);
+
+
+/* =========================================================
+   FIREBASE
+========================================================= */
+
+try {
+
+    firebase.initializeApp(
+        firebaseConfig
+    );
+
+
+    const db =
+        firebase.database();
+
+
+    const ref =
+        db.ref(RUTA);
+
+
+    ref.on(
+
+        "value",
+
+        function(snapshot) {
+
+            const data =
+                snapshot.val();
+
+
+            console.log(
+                "Datos Firebase:",
+                data
+            );
+
+
+            if (data) {
+
+                actualizarDatos(
+                    data
+                );
+
+            }
+
+        },
+
+        function(error) {
+
+            console.error(
+                "Firebase:",
+                error
+            );
+
+
+            actualizarEstado(
+                false
+            );
+
+        }
+
+    );
+
+}
+
+catch (error) {
+
+    console.error(
+        "Error Firebase:",
+        error
+    );
+
+
+    actualizarEstado(
+        false
+    );
+
+}
+
+
+/* =========================================================
+   IR AL BASTÓN
+========================================================= */
+
+function irAlBaston() {
+
+    if (!baston) {
+
+        alert(
+            "Todavía no hay una ubicación GPS válida."
+        );
+
+        return;
+
+    }
+
+
+    map.setView(
+
+        [
+
+            baston.lat,
+
+            baston.lng
+
+        ],
+
+        18,
+
+        {
+
+            animate: true
+
+        }
+
+    );
+
+
+    if (bastonMarker) {
+
+        bastonMarker.openPopup();
+
+    }
+
+}
+
+
+document.getElementById(
+    "goBaston"
+).onclick =
+    irAlBaston;
+
+
+document.getElementById(
+    "mapBaston"
+).onclick =
+    irAlBaston;
+
+
+/* =========================================================
+   MI UBICACIÓN
+========================================================= */
+
+function obtenerMiUbicacion() {
+
+    if (
+        !navigator.geolocation
+    ) {
+
+        alert(
+            "Tu navegador no soporta geolocalización."
+        );
+
+        return;
+
+    }
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+            const lat =
+                position.coords.latitude;
+
+            const lng =
+                position.coords.longitude;
+
+
+            userPosition = {
+
+                lat: lat,
+
+                lng: lng
+
+            };
+
+
+            if (!userMarker) {
+
+                userMarker =
+                    L.marker(
+
+                        [
+
+                            lat,
+
+                            lng
+
+                        ],
+
+                        {
+
+                            icon:
+                                iconoUsuario()
+
+                        }
+
+                    ).addTo(map);
+
+
+                userMarker.bindPopup(
+                    "📍 Tu ubicación"
+                );
+
+            }
+
+            else {
+
+                userMarker.setLatLng([
+
+                    lat,
+
+                    lng
+
+                ]);
+
+            }
+
+
+            if (
+                position.coords.accuracy
+            ) {
+
+                if (!accuracyCircle) {
+
+                    accuracyCircle =
+                        L.circle(
+
+                            [
+
+                                lat,
+
+                                lng
+
+                            ],
+
+                            {
+
+                                radius:
+                                    position.coords.accuracy,
+
+                                color:
+                                    "#2563eb",
+
+                                fillColor:
+                                    "#2563eb",
+
+                                fillOpacity:
+                                    0.08
+
+                            }
+
+                        ).addTo(map);
+
+                }
+
+                else {
+
+                    accuracyCircle.setLatLng([
+
+                        lat,
+
+                        lng
+
+                    ]);
+
+                    accuracyCircle.setRadius(
+
+                        position.coords.accuracy
+
+                    );
+
+                }
+
+            }
+
+
+            map.setView(
+
+                [
+
+                    lat,
+
+                    lng
+
+                ],
+
+                17
+
+            );
+
+        },
+
+        function(error) {
+
+            alert(
+
+                "No se pudo obtener tu ubicación. " +
+
+                "Activa el permiso de ubicación del navegador."
+
+            );
+
+        },
+
+        {
+
+            enableHighAccuracy:
+                true,
+
+            timeout:
+                10000,
+
+            maximumAge:
+                5000
+
+        }
+
+    );
+
+}
+
+
+document.getElementById(
+    "myLocation"
+).onclick =
+    obtenerMiUbicacion;
+
+
+document.getElementById(
+    "mapUser"
+).onclick =
+    obtenerMiUbicacion;
+
+
+/* =========================================================
+   SEGUIR BASTÓN
+========================================================= */
+
+document.getElementById(
+    "followButton"
+).onclick =
+
+    function() {
+
+        followBaston =
+            !followBaston;
+
+
+        if (
+            followBaston
+        ) {
+
+            this.textContent =
+                "🛑 Dejar de seguir";
+
+
+            this.classList.add(
+                "active"
+            );
+
+
+            irAlBaston();
+
+        }
+
+        else {
+
+            this.textContent =
+                "🎯 Seguir bastón";
+
+
+            this.classList.remove(
+                "active"
+            );
+
+        }
+
+    };
+
+
+/* =========================================================
+   CALCULAR RUTA
+========================================================= */
+
+async function calcularRuta() {
+
+    if (!baston) {
+
+        alert(
+            "No existe una ubicación del bastón."
+        );
+
+        return;
+
+    }
+
+
+    if (!userPosition) {
+
+        alert(
+            "Primero pulsa 'Ver mi ubicación'."
+        );
+
+        obtenerMiUbicacion();
+
+        return;
+
+    }
+
+
+    const url =
+
+        "https://router.project-osrm.org/route/v1/driving/" +
+
+        `${userPosition.lng},${userPosition.lat};` +
+
+        `${baston.lng},${baston.lat}` +
+
+        "?overview=full&geometries=geojson";
+
+
+    try {
+
+        const response =
+            await fetch(url);
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Error HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !data.routes ||
+            data.routes.length === 0
+        ) {
+
+            alert(
+                "No se encontró una ruta."
+            );
+
+            return;
+
+        }
+
+
+        const route =
+            data.routes[0];
+
+
+        const coordinates =
+            route.geometry.coordinates.map(
+
+                p => [
+
+                    p[1],
+
+                    p[0]
+
+                ]
+
+            );
+
+
+        if (routeLine) {
+
+            map.removeLayer(
+                routeLine
+            );
+
+        }
+
+
+        routeLine =
+            L.polyline(
+
+                coordinates,
+
+                {
+
+                    color:
+                        "#2563eb",
+
+                    weight:
+                        6,
+
+                    opacity:
+                        0.8
+
+                }
+
+            ).addTo(map);
+
+
+        map.fitBounds(
+
+            routeLine.getBounds(),
+
+            {
+
+                padding:
+                    [30, 30]
+
+            }
+
+        );
+
+
+        const distanciaKm =
+
+            (
+
+                route.distance /
+
+                1000
+
+            ).toFixed(2);
+
+
+        const minutos =
+
+            Math.round(
+
+                route.duration /
+
+                60
+
+            );
+
+
+        alert(
+
+            "Ruta encontrada\n\n" +
+
+            "Distancia: " +
+
+            distanciaKm +
+
+            " km\n" +
+
+            "Tiempo aproximado: " +
+
+            minutos +
+
+            " minutos"
+
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Error de ruta:",
+            error
+        );
+
+
+        alert(
+            "No fue posible calcular la ruta."
+        );
+
+    }
+
+}
+
+
+document.getElementById(
+    "routeButton"
+).onclick =
+    calcularRuta;
+
+
+/* =========================================================
+   GUARDAR UBICACIÓN
+========================================================= */
+
+function guardarUbicacion() {
+
+    if (!baston) {
+
+        alert(
+            "No hay una ubicación GPS para guardar."
+        );
+
+        return;
+
+    }
+
+
+    const nombre =
+        prompt(
+
+            "Nombre de la ubicación:",
+
+            "Ubicación del bastón"
+
+        );
+
+
+    if (!nombre) {
+
+        return;
+
+    }
+
+
+    const nueva = {
+
+        id:
+            Date.now(),
+
+        nombre:
+            nombre,
+
+        lat:
+            baston.lat,
+
+        lng:
+            baston.lng,
+
+        fecha:
+            new Date().toLocaleString()
+
+    };
+
+
+    const lista =
+        JSON.parse(
+
+            localStorage.getItem(
+                "bastonUbicaciones"
+            ) || "[]"
+
+        );
+
+
+    lista.push(
+        nueva
+    );
+
+
+    localStorage.setItem(
+
+        "bastonUbicaciones",
+
+        JSON.stringify(lista)
+
+    );
+
+
+    mostrarUbicaciones();
+
+}
+
+
+document.getElementById(
+    "saveButton"
+).onclick =
+    guardarUbicacion;
+
+
+/* =========================================================
+   MOSTRAR UBICACIONES
+========================================================= */
+
+function mostrarUbicaciones() {
+
+    const contenedor =
+        document.getElementById(
+            "savedLocations"
+        );
+
+
+    const lista =
+        JSON.parse(
+
+            localStorage.getItem(
+                "bastonUbicaciones"
+            ) || "[]"
+
+        );
+
+
+    contenedor.innerHTML = "";
+
+
+    if (
+        lista.length === 0
+    ) {
+
+        contenedor.innerHTML = `
+
+            <div style="
+                color:#64748b;
+                font-size:12px;
+            ">
+
+                No hay ubicaciones guardadas.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    lista
+        .slice()
+        .reverse()
+        .forEach(
+
+            ubicacion => {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    "saved-item";
+
+
+                item.innerHTML = `
+
+                    <div class="saved-name">
+
+                        📍
+                        ${escapar(
+                            ubicacion.nombre
+                        )}
+
+                    </div>
+
+                    <div class="saved-info">
+
+                        ${ubicacion.fecha}
+
+                    </div>
+
+                    <div class="saved-info">
+
+                        ${ubicacion.lat.toFixed(6)},
+                        ${ubicacion.lng.toFixed(6)}
+
+                    </div>
+
+                    <div class="saved-buttons">
+
+                        <button
+                            onclick="
+                                verGuardada(
+                                    ${ubicacion.lat},
+                                    ${ubicacion.lng}
+                                )
+                            ">
+
+                            Ver
+
+                        </button>
+
+                        <button
+                            onclick="
+                                eliminarGuardada(
+                                    ${ubicacion.id}
+                                )
+                            ">
+
+                            Eliminar
+
+                        </button>
+
+                    </div>
+
+                `;
+
+
+                contenedor.appendChild(
+                    item
+                );
+
+            }
+
+        );
+
+}
+
+
+/* =========================================================
+   VER UBICACIÓN GUARDADA
+========================================================= */
+
+function verGuardada(
+    lat,
+    lng
+) {
+
+    map.setView(
+
+        [
+
+            lat,
+
+            lng
+
+        ],
+
+        18
+
+    );
+
+
+    L.popup()
+
+        .setLatLng([
+
+            lat,
+
+            lng
+
+        ])
+
+        .setContent(
+            "📍 Ubicación guardada"
+        )
+
+        .openOn(map);
+
+}
+
+
+/* =========================================================
+   ELIMINAR UBICACIÓN
+========================================================= */
+
+function eliminarGuardada(
+    id
+) {
+
+    let lista =
+        JSON.parse(
+
+            localStorage.getItem(
+                "bastonUbicaciones"
+            ) || "[]"
+
+        );
+
+
+    lista =
+        lista.filter(
+
+            item =>
+                item.id !== id
+
+        );
+
+
+    localStorage.setItem(
+
+        "bastonUbicaciones",
+
+        JSON.stringify(lista)
+
+    );
+
+
+    mostrarUbicaciones();
+
+}
+
+
+/* =========================================================
+   ESCAPAR TEXTO
+========================================================= */
+
+function escapar(
+    texto
+) {
+
+    return String(texto)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =========================================================
+   INICIO
+========================================================= */
+
+mostrarUbicaciones();
+
+
+/*
+   Leaflet a veces necesita saber el tamaño real
+   después de que el contenedor termina de mostrarse.
+*/
+
+setTimeout(
+    function() {
+
+        map.invalidateSize();
+
+    },
+    300
+);
+
+</script>
+
+
+</body>
+
+</html>
